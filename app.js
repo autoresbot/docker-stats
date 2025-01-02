@@ -9,7 +9,7 @@ wss.on('connection', (ws) => {
     function getDockerStats(callback) {
         const command = `
             docker stats --no-stream --format "table {{.Container}}\\t{{.Name}}\\t{{.CPUPerc}}\\t{{.MemUsage}}" |
-            (head -n 1; sort -k3 -nr | head -n 10; echo ""; echo "TOP BY MEMORY:"; sort -k4 -hr | head -n 10)
+            (head -n 1; sort -k3 -nr | head -n 20)
         `;
         exec(command, (err, stdout, stderr) => {
             if (err || stderr) {
@@ -19,56 +19,45 @@ wss.on('connection', (ws) => {
         });
     }
 
-    // Kirimkan data ke client setiap 10 detik
-    setInterval(() => {
+    // Fungsi untuk mengirim data Docker stats ke client
+    const sendStats = () => {
         getDockerStats((data) => {
-            const topStats = parseDockerStats(data);
+            const stats = parseDockerStats(data);
 
             // Kirimkan data ke client
             ws.send(JSON.stringify({
                 type: 'docker_stats',
-                stats: topStats
+                stats: stats
             }));
         });
-    }, 10000);
+    };
+
+    // Kirimkan data setiap 10 detik
+    const interval = setInterval(sendStats, 10000);
+
+    // Kirim data pertama kali segera setelah client terhubung
+    sendStats();
 
     ws.on('close', () => {
         console.log('Client disconnected');
+        clearInterval(interval); // Hentikan interval saat client terputus
     });
 });
 
-// Fungsi untuk mengurai data dan mendapatkan statistik berdasarkan CPU dan Memory
+// Fungsi untuk mengurai data dan mendapatkan statistik dalam satu daftar
 function parseDockerStats(data) {
-    const lines = data.split('\n');
-    const stats = {
-        top_by_cpu: [],
-        top_by_memory: []
-    };
+    const lines = data.split('\n').slice(1); // Hapus header
+    const stats = [];
 
-    let section = null;
     lines.forEach((line) => {
-        if (line.includes("TOP BY MEMORY")) {
-            section = "memory";
-        }
-
-        // Jika baris memiliki lebih dari 3 kolom, itu adalah data yang valid
-        if (line.split(/\s+/).length > 3) {
-            const columns = line.split(/\s+/);
-            if (section === "memory") {
-                stats.top_by_memory.push({
-                    Container: columns[0],
-                    Name: columns[1],
-                    CPUPerc: columns[2],
-                    MemUsage: columns[3]
-                });
-            } else {
-                stats.top_by_cpu.push({
-                    Container: columns[0],
-                    Name: columns[1],
-                    CPUPerc: columns[2],
-                    MemUsage: columns[3]
-                });
-            }
+        const columns = line.split(/\s+/);
+        if (columns.length >= 4) { // Pastikan data valid
+            stats.push({
+                Container: columns[0],
+                Name: columns[1],
+                CPUPerc: columns[2],
+                MemUsage: columns[3]
+            });
         }
     });
 
