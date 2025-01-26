@@ -9,8 +9,8 @@ exec('df -h', (err, stdout, stderr) => {
   // Parsing output df -h
   const lines = stdout.split('\n');
   lines.forEach(line => {
-    // Mencari perangkat yang diawali dengan /dev/
-    if (line.includes('/dev/')) {
+    // Cek perangkat yang terpasang pada root '/'
+    if (line.includes('/dev/') && line.includes('/')) {
       const data = line.split(/\s+/);
       const storageInfo = {
         device: data[0],
@@ -20,6 +20,7 @@ exec('df -h', (err, stdout, stderr) => {
         percentUsed: data[4]
       };
       console.log(storageInfo);
+      return;  // Hentikan pencarian setelah menemukan perangkat root
     }
   });
 });
