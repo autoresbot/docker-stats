@@ -1,5 +1,6 @@
 const WebSocket = require('ws');
 const { exec } = require('child_process');
+const os = require('os');
 const wss = new WebSocket.Server({ port: 7000 });
 
 wss.on('connection', (ws) => {
@@ -8,7 +9,7 @@ wss.on('connection', (ws) => {
     // Fungsi untuk mendapatkan statistik Docker
     function getDockerStats(callback) {
         const command = `
-            docker stats --no-stream --format "table {{.Container}}\\t{{.Name}}\\t{{.CPUPerc}}\\t{{.MemUsage}}" |
+            docker stats --no-stream --format "table {{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" |
             (head -n 1; sort -k3 -nr | head -n 20)
         `;
         exec(command, (err, stdout, stderr) => {
@@ -19,16 +20,54 @@ wss.on('connection', (ws) => {
         });
     }
 
-    // Fungsi untuk mengirim data Docker stats ke client
-    const sendStats = () => {
-        getDockerStats((data) => {
-            const stats = parseDockerStats(data);
+    // Fungsi untuk mendapatkan informasi sistem
+    function getSystemInfo(callback) {
+        const totalMem = os.totalmem(); // Total RAM dalam byte
+        const freeMem = os.freemem(); // RAM yang tersedia dalam byte
+        const usedMem = totalMem - freeMem; // RAM yang digunakan dalam byte
 
-            // Kirimkan data ke client
-            ws.send(JSON.stringify({
-                type: 'docker_stats',
-                stats: stats
-            }));
+        exec('df -h --total | grep total', (err, stdout, stderr) => {
+            if (err || stderr) {
+                return callback(`Error: ${err || stderr}`);
+            }
+
+            const storageData = stdout.split(/\s+/); // Ambil informasi penyimpanan
+            const storageInfo = {
+                size: storageData[1],
+                used: storageData[2],
+                available: storageData[3],
+                percentUsed: storageData[4]
+            };
+
+            callback(null, {
+                ram: {
+                    total: (totalMem / 1024 / 1024 / 1024).toFixed(2) + ' GB',
+                    used: (usedMem / 1024 / 1024 / 1024).toFixed(2) + ' GB',
+                    free: (freeMem / 1024 / 1024 / 1024).toFixed(2) + ' GB'
+                },
+                storage: storageInfo
+            });
+        });
+    }
+
+    // Fungsi untuk mengirim data ke client
+    const sendStats = () => {
+        getDockerStats((dockerData) => {
+            const dockerStats = parseDockerStats(dockerData);
+
+            getSystemInfo((err, systemInfo) => {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+
+                // Kirimkan data ke client
+                ws.send(JSON.stringify({
+                    type: 'stats',
+                    docker_stats: dockerStats,
+                    system_info: systemInfo
+                }));
+            });
         });
     };
 
