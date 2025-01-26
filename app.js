@@ -27,11 +27,18 @@ wss.on('connection', (ws) => {
         const usedMem = totalMem - freeMem; // RAM yang digunakan dalam byte
 
         exec('df -h /dev/vda1', (err, stdout, stderr) => { 
+            // root@server746495377:~# df -h /dev/vda1
+            // Filesystem      Size  Used Avail Use% Mounted on
+            // /dev/vda1        98G   25G   69G  27% /
             
             if (err || stderr) {
                 return callback(`Error: ${err || stderr}`);
             }
-            const storageData = stdout.split(/\s+/); // Ambil informasi penyimpanan
+
+            const lines = stdout.split('\n');
+
+             const storageData = lines[1].split(/\s+/);
+             
             const storageInfo = {
                 size: storageData[1],
                 used: storageData[2],
