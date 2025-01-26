@@ -26,20 +26,26 @@ wss.on('connection', (ws) => {
         const freeMem = os.freemem(); // RAM yang tersedia dalam byte
         const usedMem = totalMem - freeMem; // RAM yang digunakan dalam byte
 
-        exec('df -h /dev/vda1', (err, stdout, stderr) => { 
+        exec('df -h', (err, stdout, stderr) => { 
             if (err || stderr) {
                 return callback(`Error: ${err || stderr}`);
             }
-
+             // Parsing output df -h
             const lines = stdout.split('\n');
-            const storageData = lines[1].split(/\s+/);
-            const storageInfo = {
-                size: storageData[1],
-                used: storageData[2],
-                available: storageData[3],
-                percentUsed: storageData[4]
-            };
-
+            let storageInfo;
+            for (let line of lines) {
+              if (line.includes('/dev/')) {
+                const data = line.split(/\s+/);
+                 storageInfo = {
+                  device: data[0],
+                  size: data[1],
+                  used: data[2],
+                  available: data[3],
+                  percentUsed: data[4]
+                };
+                return; // Hentikan setelah mendapatkan data pertama
+              }
+            }
             callback(null, {
                 ram: {
                     total: (totalMem / 1024 / 1024 / 1024).toFixed(2) + ' GB',
