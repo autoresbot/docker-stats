@@ -8,24 +8,20 @@ exec('df -h', (err, stdout, stderr) => {
 
   // Parsing output df -h
   const lines = stdout.split('\n');
-  let storageInfo = {};
 
-  lines.forEach(line => {
-    // Memeriksa jika perangkat mengandung '/dev/'
+  // Iterasi dan cari data pertama yang mengandung '/dev/'
+  for (let line of lines) {
     if (line.includes('/dev/')) {
       const data = line.split(/\s+/);
-      const device = data[0];
-      const info = {
+      const storageInfo = {
+        device: data[0],
         size: data[1],
         used: data[2],
         available: data[3],
         percentUsed: data[4]
       };
-      
-      // Gabungkan data dalam storageInfo objek
-      storageInfo[device] = info;
+      console.log(storageInfo);
+      return;  // Hentikan setelah mendapatkan data pertama
     }
-  });
-
-  console.log(storageInfo);
+  }
 });
