@@ -69,11 +69,14 @@ wss.on('connection', (ws) => {
                 }
 
                 // Kirimkan data ke client
+                console.log(systemInfo)
+                console.log('-----------')
                 ws.send(JSON.stringify({
                     type: 'stats',
                     docker_stats: dockerStats,
                     system_info: systemInfo
                 }));
+
             });
         });
     };
