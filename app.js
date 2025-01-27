@@ -14,6 +14,7 @@ wss.on('connection', (ws) => {
         `;
         exec(command, (err, stdout, stderr) => {
             if (err || stderr) {
+                console.error('Docker stats error:', err || stderr);
                 return callback(`Error: ${err || stderr}`);
             }
             callback(stdout);
@@ -22,30 +23,33 @@ wss.on('connection', (ws) => {
 
     // Fungsi untuk mendapatkan informasi sistem
     function getSystemInfo(callback) {
-        const totalMem = os.totalmem(); // Total RAM dalam byte
-        const freeMem = os.freemem(); // RAM yang tersedia dalam byte
-        const usedMem = totalMem - freeMem; // RAM yang digunakan dalam byte
-
-        exec('df -h', (err, stdout, stderr) => { 
+        const totalMem = os.totalmem();
+        const freeMem = os.freemem();
+        const usedMem = totalMem - freeMem;
+    
+        exec('df -h', (err, stdout, stderr) => {
             if (err || stderr) {
                 return callback(`Error: ${err || stderr}`);
             }
-             // Parsing output df -h
+    
+            // Parsing output df -h
             const lines = stdout.split('\n');
-            let storageInfo;
+            let storageInfo = null; // Set default null jika tidak ada data
             for (let line of lines) {
-              if (line.includes('/dev/')) {
-                const data = line.split(/\s+/);
-                 storageInfo = {
-                  device: data[0],
-                  size: data[1],
-                  used: data[2],
-                  available: data[3],
-                  percentUsed: data[4]
-                };
-                return; // Hentikan setelah mendapatkan data pertama
-              }
+                if (line.includes('/dev/')) {
+                    const data = line.split(/\s+/);
+                    storageInfo = {
+                        device: data[0],
+                        size: data[1],
+                        used: data[2],
+                        available: data[3],
+                        percentUsed: data[4]
+                    };
+                    break;
+                }
             }
+    
+            // Pastikan callback selalu terpanggil
             callback(null, {
                 ram: {
                     total: (totalMem / 1024 / 1024 / 1024).toFixed(2) + ' GB',
@@ -56,6 +60,7 @@ wss.on('connection', (ws) => {
             });
         });
     }
+    
 
     // Fungsi untuk mengirim data ke client
     const sendStats = () => {
@@ -68,14 +73,17 @@ wss.on('connection', (ws) => {
                     return;
                 }
 
-                // Kirimkan data ke client
-                console.log(systemInfo)
-                console.log('-----------')
-                ws.send(JSON.stringify({
+                const payload = {
                     type: 'stats',
                     docker_stats: dockerStats,
                     system_info: systemInfo
-                }));
+                };
+                try {
+                    console.log('Success send data');
+                    ws.send(JSON.stringify(payload));
+                } catch (sendError) {
+                    console.error('Failed to send data:', sendError);
+                }
 
             });
         });
