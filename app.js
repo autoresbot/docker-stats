@@ -8,10 +8,15 @@ wss.on('connection', (ws) => {
 
     // Fungsi untuk mendapatkan statistik Docker
     function getDockerStats(callback) {
-        const command = `
-            docker stats --no-stream --format "table {{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" |
-            (head -n 1; sort -k3 -nr | head -n 20)
-        `;
+        //const command = `
+        //     docker stats --no-stream --format "table {{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" |
+        //     (head -n 1; sort -k3 -nr | head -n 20)
+        // `;
+
+    const command = `docker stats --no-stream --format "{{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" |
+sed 's/%//' | sort -k3 -nr | head -n 20
+`;
+
         exec(command, (err, stdout, stderr) => {
             if (err || stderr) {
                 console.error('Docker stats error:', err || stderr);
