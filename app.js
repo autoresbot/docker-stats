@@ -8,16 +8,7 @@ wss.on('connection', (ws) => {
 
     // Fungsi untuk mendapatkan statistik Docker
     function getDockerStats(callback) {
-        //const command = `
-        //     docker stats --no-stream --format "table {{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" |
-        //     (head -n 1; sort -k3 -nr | head -n 20)
-        // `;
-
-//     const command = `docker stats --no-stream --format "{{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" |
-// sed 's/%//' | sort -k3 -nr | head -n 20
-// `;
-
-        const command = `docker stats --no-stream --format "{{.Container}}\t{{.Name}}\t{{.CPUPerc}}" | sed 's/%//' | sort -k3 -nr | head -n 20`
+        const command = `docker stats --no-stream --format "{{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" | sed 's/%//' | sort -k3 -nr | head -n 20`
 
         exec(command, (err, stdout, stderr) => {
             if (err || stderr) {
@@ -110,6 +101,9 @@ wss.on('connection', (ws) => {
 
 // Fungsi untuk mengurai data dan mendapatkan statistik dalam satu daftar
 function parseDockerStats(data) {
+    console.log('data masuk di parseDockerStats()')
+    console.log(data);
+    console.log('------------------------')
     const lines = data.split('\n').slice(1); // Hapus header
     const stats = [];
 
