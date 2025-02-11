@@ -24,12 +24,12 @@ wss.on('connection', (ws) => {
         const totalMem = os.totalmem();
         const freeMem = os.freemem();
         const usedMem = totalMem - freeMem;
-    
+
         exec('df -h', (err, stdout, stderr) => {
             if (err || stderr) {
                 return callback(`Error: ${err || stderr}`);
             }
-    
+
             // Parsing output df -h
             const lines = stdout.split('\n');
             let storageInfo = null; // Set default null jika tidak ada data
@@ -46,7 +46,7 @@ wss.on('connection', (ws) => {
                     break;
                 }
             }
-    
+
             // Pastikan callback selalu terpanggil
             callback(null, {
                 ram: {
@@ -58,7 +58,7 @@ wss.on('connection', (ws) => {
             });
         });
     }
-    
+
 
     // Fungsi untuk mengirim data ke client
     const sendStats = () => {
@@ -101,14 +101,10 @@ wss.on('connection', (ws) => {
 
 // Fungsi untuk mengurai data dan mendapatkan statistik dalam satu daftar
 function parseDockerStats(data) {
-    console.log('data masuk di parseDockerStats()')
-    console.log(data);
-    console.log('------------------------')
-
     // 132d4e348af6  3e4fa375-f6ac-495a-9db0-769c8c8899a1    87.49   109.4MiB / 5.795GiB
     // 1b215fd38a43  f969b94e-0792-4741-9a82-b50501361d6f    10.61   2.56GiB / 5.795GiB
     // 6ff8c697210e  a53cd185-fffc-4c8f-bf07-fb141f7e5af6    0.01    93.48MiB / 5.795GiB
-    
+
     const lines = data.split('\n'); // Header tetap disertakan
     const stats = [];
 
