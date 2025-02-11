@@ -13,9 +13,11 @@ wss.on('connection', (ws) => {
         //     (head -n 1; sort -k3 -nr | head -n 20)
         // `;
 
-    const command = `docker stats --no-stream --format "{{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" |
-sed 's/%//' | sort -k3 -nr | head -n 20
-`;
+//     const command = `docker stats --no-stream --format "{{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" |
+// sed 's/%//' | sort -k3 -nr | head -n 20
+// `;
+
+        const command = `docker stats --no-stream --format "{{.Container}}\t{{.Name}}\t{{.CPUPerc}}" | sed 's/%//' | sort -k3 -nr | head -n 20`
 
         exec(command, (err, stdout, stderr) => {
             if (err || stderr) {
